@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./api-client-react" },
+    { "path": "./api-zod" },
+    { "path": "./db" },
+    { "path": "./api-server" },
+    { "path": "./a3-shopping-platform" }
+  ]
+}

@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "A³ shopping platform"
+description = "A responsive ecommerce storefront inspired by familiar marketplace shopping flows, with a branded catalog, persistent cart, account onboarding, checkout, and order tracking."
+version = "1.0.0"
+id = "artifacts/a3-shopping-platform"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22881
+
+[services.development]
+run = "pnpm --filter @workspace/a3-shopping-platform run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/a3-shopping-platform", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/a3-shopping-platform/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22881"
+BASE_PATH = "/"

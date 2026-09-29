@@ -1,0 +1,447 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: A³ shopping platform storefront and order API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: storefront
+    description: Product discovery and storefront data
+  - name: customers
+    description: Customer profile and cart operations
+  - name: orders
+    description: Customer order tracking
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /storefront/summary:
+    get:
+      operationId: getStorefrontSummary
+      tags: [storefront]
+      summary: Get storefront summary data
+      description: Returns featured products, categories, and promotional messaging for the home page.
+      responses:
+        "200":
+          description: Storefront summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorefrontSummary"
+  /products:
+    get:
+      operationId: listProducts
+      tags: [storefront]
+      summary: List products
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [featured, price-low, price-high, rating]
+            default: featured
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 48
+            default: 24
+      responses:
+        "200":
+          description: Product list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+  /products/{productId}:
+    get:
+      operationId: getProduct
+      tags: [storefront]
+      summary: Get a product
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Product not found
+  /customers:
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      summary: Create or find a customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerInput"
+      responses:
+        "200":
+          description: Customer record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+  /customers/{customerId}:
+    get:
+      operationId: getCustomer
+      tags: [customers]
+      summary: Get customer account details
+      parameters:
+        - $ref: "#/components/parameters/CustomerId"
+      responses:
+        "200":
+          description: Customer account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+  /customers/{customerId}/profile:
+    patch:
+      operationId: updateCustomerProfile
+      tags: [customers]
+      summary: Update customer profile and delivery address
+      parameters:
+        - $ref: "#/components/parameters/CustomerId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerProfileInput"
+      responses:
+        "200":
+          description: Updated customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+  /customers/{customerId}/cart:
+    get:
+      operationId: getCart
+      tags: [customers]
+      summary: Get the customer's cart
+      parameters:
+        - $ref: "#/components/parameters/CustomerId"
+      responses:
+        "200":
+          description: Customer cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+  /customers/{customerId}/cart/lines:
+    post:
+      operationId: addCartLine
+      tags: [customers]
+      summary: Add a product to the cart
+      parameters:
+        - $ref: "#/components/parameters/CustomerId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CartLineInput"
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+  /customers/{customerId}/cart/lines/{lineId}:
+    patch:
+      operationId: updateCartLine
+      tags: [customers]
+      summary: Update cart quantity
+      parameters:
+        - $ref: "#/components/parameters/CustomerId"
+        - $ref: "#/components/parameters/LineId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CartLineUpdate"
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+    delete:
+      operationId: removeCartLine
+      tags: [customers]
+      summary: Remove a cart line
+      parameters:
+        - $ref: "#/components/parameters/CustomerId"
+        - $ref: "#/components/parameters/LineId"
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+  /customers/{customerId}/checkout:
+    post:
+      operationId: checkout
+      tags: [orders]
+      summary: Create a checkout and redirect to Shopify
+      parameters:
+        - $ref: "#/components/parameters/CustomerId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutInput"
+      responses:
+        "201":
+          description: Checkout created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Checkout"
+  /customers/{customerId}/orders:
+    get:
+      operationId: listCustomerOrders
+      tags: [orders]
+      summary: List customer orders
+      parameters:
+        - $ref: "#/components/parameters/CustomerId"
+      responses:
+        "200":
+          description: Customer orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+  /orders/{orderId}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Get an order
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      responses:
+        "200":
+          description: Order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+components:
+  parameters:
+    ProductId:
+      name: productId
+      in: path
+      required: true
+      schema:
+        type: string
+    CustomerId:
+      name: customerId
+      in: path
+      required: true
+      schema:
+        type: string
+    LineId:
+      name: lineId
+      in: path
+      required: true
+      schema:
+        type: string
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Category:
+      type: object
+      required: [id, label, count]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        count: { type: integer }
+    Product:
+      type: object
+      required: [id, title, description, category, price, compareAtPrice, image, rating, reviewCount, badge, inStock]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        category: { type: string }
+        price: { type: number }
+        compareAtPrice: { type: number }
+        image: { type: string }
+        rating: { type: number }
+        reviewCount: { type: integer }
+        badge: { type: string }
+        inStock: { type: boolean }
+        quantityAvailable: { type: integer }
+    StorefrontSummary:
+      type: object
+      required: [categories, featured, promo]
+      properties:
+        categories:
+          type: array
+          items: { $ref: "#/components/schemas/Category" }
+        featured:
+          type: array
+          items: { $ref: "#/components/schemas/Product" }
+        promo:
+          type: object
+          required: [eyebrow, title, description, code]
+          properties:
+            eyebrow: { type: string }
+            title: { type: string }
+            description: { type: string }
+            code: { type: string }
+    CustomerInput:
+      type: object
+      required: [email, name]
+      properties:
+        email: { type: string, format: email }
+        name: { type: string, minLength: 2 }
+        phone: { type: string }
+    CustomerProfileInput:
+      type: object
+      required: [name, phone, addressLine1, city, state, postalCode]
+      properties:
+        name: { type: string, minLength: 2 }
+        phone: { type: string, minLength: 7 }
+        addressLine1: { type: string, minLength: 3 }
+        addressLine2: { type: string }
+        city: { type: string, minLength: 2 }
+        state: { type: string, minLength: 2 }
+        postalCode: { type: string, minLength: 3 }
+    Customer:
+      type: object
+      required: [id, customerNumber, email, name, phone, address, createdAt]
+      properties:
+        id: { type: string }
+        customerNumber: { type: string }
+        email: { type: string }
+        name: { type: string }
+        phone: { type: string }
+        address:
+          type: object
+          required: [addressLine1, city, state, postalCode]
+          properties:
+            addressLine1: { type: string }
+            addressLine2: { type: string }
+            city: { type: string }
+            state: { type: string }
+            postalCode: { type: string }
+        createdAt: { type: string }
+    CartLineInput:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId: { type: string }
+        quantity: { type: integer, minimum: 1, maximum: 20 }
+    CartLineUpdate:
+      type: object
+      required: [quantity]
+      properties:
+        quantity: { type: integer, minimum: 0, maximum: 20 }
+    CartLine:
+      type: object
+      required: [id, product, quantity, lineTotal]
+      properties:
+        id: { type: string }
+        product: { $ref: "#/components/schemas/Product" }
+        quantity: { type: integer }
+        lineTotal: { type: number }
+    Cart:
+      type: object
+      required: [id, customerId, lines, subtotal, shipping, total, itemCount]
+      properties:
+        id: { type: string }
+        customerId: { type: string }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/CartLine" }
+        subtotal: { type: number }
+        shipping: { type: number }
+        total: { type: number }
+        itemCount: { type: integer }
+    CheckoutInput:
+      type: object
+      required: [addressLine1, city, state, postalCode]
+      properties:
+        addressLine1: { type: string, minLength: 3 }
+        addressLine2: { type: string }
+        city: { type: string, minLength: 2 }
+        state: { type: string, minLength: 2 }
+        postalCode: { type: string, minLength: 3 }
+        note: { type: string }
+        paymentMethod: { type: string }
+    Checkout:
+      type: object
+      required: [orderId, checkoutUrl, status]
+      properties:
+        orderId: { type: string }
+        checkoutUrl: { type: string, format: uri }
+        status: { type: string }
+    Order:
+      type: object
+      required: [id, orderNumber, customerId, status, paymentStatus, items, total, deliveryStatus, createdAt]
+      properties:
+        id: { type: string }
+        orderNumber: { type: string }
+        customerId: { type: string }
+        status: { type: string }
+        paymentStatus: { type: string }
+        deliveryStatus: { type: string }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CartLine" }
+        total: { type: number }
+        trackingNumber: { type: ["string", "null"] }
+        createdAt: { type: string }
+
